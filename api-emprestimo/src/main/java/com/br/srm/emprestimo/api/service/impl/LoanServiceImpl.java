@@ -1,10 +1,10 @@
 package com.br.srm.emprestimo.api.service.impl;
 
-import com.br.srm.emprestimo.api.api.PaymentApi;
 import com.br.srm.emprestimo.api.dto.request.LoanRequest;
 import com.br.srm.emprestimo.api.dto.response.LoanResponse;
 import com.br.srm.emprestimo.api.exception.BaseException;
 import com.br.srm.emprestimo.api.mapper.LoanMapper;
+import com.br.srm.emprestimo.api.message.PaymentMessage;
 import com.br.srm.emprestimo.api.model.Loan;
 import com.br.srm.emprestimo.api.model.Person;
 import com.br.srm.emprestimo.api.repository.LoanRepository;
@@ -15,10 +15,12 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
@@ -30,7 +32,7 @@ public class LoanServiceImpl implements LoanService {
     private LoanRepository repository;
     private LoanMapper mapper;
     private PersonRepository personRepository;
-    private PaymentApi paymentApi;
+    private KafkaTemplate<String, Serializable> kafkaTemplate;
 
     private static Integer MAX_ALLOWED_PARCELS = 24;
 
@@ -54,7 +56,7 @@ public class LoanServiceImpl implements LoanService {
 
         Loan model = mapper.create(request, person.get());
         model = repository.save(model);
-//        makePaymen(model.getId());
+        makePaymen(model.getId());
         return mapper.response(model);
     }
 
@@ -71,8 +73,10 @@ public class LoanServiceImpl implements LoanService {
         }
     }
 
-    @Transactional
     private void makePaymen(Long loanId){
-        paymentApi.makePayment(loanId);
+        PaymentMessage message = new PaymentMessage();
+        message.setLoanId(loanId);
+        message.setStatusPayment("PAGO");
+        kafkaTemplate.send("payment-topic", message);
     }
 }
