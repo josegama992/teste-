@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+  api-pagamento:
+    container_name: api-pagamento
+    build:
+        context: api-pagamento
+        dockerfile: Dockerfile
+    image: api-pagamento:latest
+    ports:
+        - 8081:8081
+    environment:
+          - POSTGRESQL_URL=db
+          - POSTGRESQL_PORT=5432
+          - POSTGRESQL_DATABASE=postgres
+          - POSTGRESQL_USER=postgres
+          - POSTGRESQL_PASSWORD=postgres
+          - SERVER_PORT=8081
+    networks:
+        - spring-cloud-network
+  api-emprestimo:
+    container_name: api-emprestimo
+    build:
+        context: api-emprestimo
+        dockerfile: Dockerfile
+    image: api-emprestimo:latest
+    ports:
+        - 8080:8080
+    environment:
+          - POSTGRESQL_URL=db
+          - POSTGRESQL_PORT=5432
+          - POSTGRESQL_DATABASE=postgres
+          - POSTGRESQL_USER=postgres
+          - POSTGRESQL_PASSWORD=postgres
+          - SERVER_PORT=8080
+          - PAYMENT_API_HOST=http://localhost:8080
+          - PAYMENT_API_READ_TIMEOUT=30
+          - PAYMENT_API_CONNECT_TIMEOUT=30
+    networks:
+        - spring-cloud-network
+  db:
+    image: postgres:latest
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    networks:
+        - spring-cloud-network
+volumes:
+  postgres-data:
+networks:
+    spring-cloud-network:
+        driver: bridge
