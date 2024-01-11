@@ -22,12 +22,16 @@ public class PaymentListener {
 
     @KafkaListener(topics = "payment-topic", groupId = "payment-group", containerFactory = "jsonContainerFactory")
     public void consumeMessage(@Payload PaymentMessage paymentMessage){
-        log.info("Reading payment: {}", paymentMessage);
+        log.info("pagamento recebido: {}", paymentMessage);
         if(nonNull(paymentMessage)){
             Optional<Loan> loan = loanRepository.findById(paymentMessage.getLoanId());
             if(loan.isPresent()){
                 loan.get().setPaymentStatus(paymentMessage.getStatusPayment());
                 loanRepository.save(loan.get());
+                log.info("pagamento de id: {} atualizado para o status: {}", paymentMessage.getLoanId(), paymentMessage.getStatusPayment());
+            }
+            else {
+                log.info("pagamento de id: {} não encontrado", paymentMessage.getLoanId());
             }
         }
     }
