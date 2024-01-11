@@ -15,6 +15,8 @@ services:
           - POSTGRESQL_USER=postgres
           - POSTGRESQL_PASSWORD=postgres
           - SERVER_PORT=8081
+          - KAFKA_HOST=localhost
+          - KAFKA_PORT=9092
     networks:
         - spring-cloud-network
   api-emprestimo:
@@ -32,9 +34,8 @@ services:
           - POSTGRESQL_USER=postgres
           - POSTGRESQL_PASSWORD=postgres
           - SERVER_PORT=8080
-          - PAYMENT_API_HOST=http://localhost:8080
-          - PAYMENT_API_READ_TIMEOUT=30
-          - PAYMENT_API_CONNECT_TIMEOUT=30
+          - KAFKA_HOST=localhost
+          - KAFKA_PORT=9092
     networks:
         - spring-cloud-network
   db:
@@ -48,6 +49,42 @@ services:
       POSTGRES_DB: postgres
     networks:
         - spring-cloud-network
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    networks:
+      - broker-kafka
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    networks:
+      - broker-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    networks:
+      - broker-kafka
+    depends_on:
+      - kafka
+    ports:
+      - "19000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: kafka:29092
+      
 volumes:
   postgres-data:
 networks:
