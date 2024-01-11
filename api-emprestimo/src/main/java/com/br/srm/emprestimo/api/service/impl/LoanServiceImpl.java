@@ -39,6 +39,7 @@ public class LoanServiceImpl implements LoanService {
     @Override
     @Transactional(readOnly = true)
     public Page<LoanResponse> findAllByPersonIdenfier(String identifier, Pageable pageable){
+        Validators.validateIdentifier(identifier);
         Page<Loan> model = repository.findAllByPersonIdentifier(identifier, pageable);
         return model.map(mapper::response);
     }

@@ -32,7 +32,7 @@ public class PersonServiceImpl implements PersonService {
     @Override
     @Transactional(readOnly = true)
     public Page<PersonResponse> findAll(PersonFilter filter, Pageable pageable) {
-        Page<Person> model = repository.findAll(pageable);
+        Page<Person> model = repository.findAll(filter, pageable);
         return model.map(mapper::response);
     }
 
