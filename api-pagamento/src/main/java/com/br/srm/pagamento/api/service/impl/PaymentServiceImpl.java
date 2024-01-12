@@ -22,7 +22,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public LoanResponse makePayment(Long loanId) {
-        System.out.println(loanId);
         Optional<Loan> loan = loanRepository.findById(loanId);
         if(loan.isEmpty()){
             throw new BaseException(HttpStatus.NOT_FOUND, String.format("Emprestimo de id: %s não encontrado.", loanId));
